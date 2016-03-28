@@ -4,11 +4,14 @@
 ## Loading and preprocessing the data
 
 ```r
-###   Set working directory to where the data lives.
-setwd("H:/BigStegShare/COURSERA/DataScience/ReproducibleData/")
+###   Get whereever the activity.zip file is on the system running this code... zctivity.zip was included in the github repository, so I'm assuming that's where it's supposed to live.
+location <- getwd()
+fileLoc <- paste(location,"activity.zip",sep="/")
 
 ###   Read in data.
-FITDATA <- read.csv("activity.csv")
+#unzipping code idea taken from stackoverflow, Dirk Eddelbuettel's contribution
+#http://stackoverflow.com/questions/3053833/using-r-to-download-zipped-data-file-extract-and-import-data
+FITDATA <- read.csv(unz(fileLoc,"activity.csv"))
 ```
 
 ## What is mean total number of steps taken per day?
@@ -27,6 +30,7 @@ title(main = "Total Steps Per Day" )
 
 ```r
 #1:3. calculate mean and median of total number of steps taken per day
+#This is the mean number of steps per day
 mean(new1, na.rm = TRUE)
 ```
 
@@ -35,6 +39,7 @@ mean(new1, na.rm = TRUE)
 ```
 
 ```r
+#This is the median number of steps per day
 median(new1, na.rm = TRUE)
 ```
 
@@ -49,31 +54,7 @@ median(new1, na.rm = TRUE)
 ## What is the average daily activity pattern?
 
 ```r
-library(dplyr)
-```
-
-```
-## Warning: package 'dplyr' was built under R version 3.2.4
-```
-
-```
-## 
-## Attaching package: 'dplyr'
-```
-
-```
-## The following objects are masked from 'package:stats':
-## 
-##     filter, lag
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union
-```
-
-```r
+#library(dplyr)
 #2:1. make a time-series plot of five-min intervals and average steps taken, averaged across all days.
 #calculate sums per min interval
 #new2 <- with (FITDATA, tapply(steps, interval, sum))
@@ -95,6 +76,7 @@ colnames(newData) <- c("intervals","averageSteps")
 
 #select max of the interval Means and show the interval with that mean.
 maxMean <- max(newData$averageSteps)
+#This is the maximum mean value
 maxMean
 ```
 
@@ -103,6 +85,7 @@ maxMean
 ```
 
 ```r
+#This is the interval with the maximum mean value
 newData[newData$averageSteps %in% maxMean,]$intervals
 ```
 
@@ -122,11 +105,12 @@ newData[x[1],]
 ```
 
 ## Imputing missing values
-###Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
-###1.Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
-###2.Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
-###3.Create a new dataset that is equal to the original dataset but with the missing data filled in.
-###4.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
+
+1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
+4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 
 ```r
@@ -141,20 +125,22 @@ sum(!complete.cases(FITDATA))
 ```r
 #3:2. Strategy for filling in missing values: 
 # use interval mean.  This data is already stored in myMeans.
+# interim- use value c(5).  
 
 #3:3. Create a new dataset with NAs replaced by myMeans vals for their intervals.
-good <- complete.cases(FITDATA)
+#good <- complete.cases(FITDATA)
 FITDATA1 <- FITDATA
-FITDATA1[!good,]$steps <- 5
+#FITDATA1[!good,]$steps <- 5
+FITDATA1$steps <- ifelse(is.na(FITDATA$steps),myMeans,FITDATA$steps)
 
 #3:4  Do a histogram like in #1, but with the new data.
 
 # calculate sums of steps per day
-new1 <- with (FITDATA1, tapply(steps, date, sum))
+new2 <- with (FITDATA1, tapply(steps, date, sum))
 
 # plot histogram
-plot(new1, type = "h", xaxt = "n", xlab = "Date", ylab = "Total Steps")
-axis(1, at=1:length(names(new1)), lab=names(new1))
+plot(new2, type = "h", xaxt = "n", xlab = "Date", ylab = "Total Steps")
+axis(1, at=1:length(names(new2)), lab=names(new2))
 title(main = "Total Steps Per Day" )
 ```
 
@@ -162,34 +148,56 @@ title(main = "Total Steps Per Day" )
 
 ```r
 # calculate mean and median of total number of steps taken per day
-mean(new1, na.rm = TRUE)
+mean(new2)
 ```
 
 ```
-## [1] 9543.082
-```
-
-```r
-median(new1, na.rm = TRUE)
-```
-
-```
-## [1] 10395
+## [1] 10766.19
 ```
 
 ```r
-#returns 10766.19 and 10765, respectively.
+median(new2)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
+#Original data returns 10766.19  and 10765, respectively.
+#New data returns       9543.082 and 10395, respectively.
 ```
 
 ###3:4.1 Are the results different from #1?
-    Yes
+Yes
+
 ###3:4.2 What is the impact of imputing data?  
-    Mean and median go up, since any imputed data is greater than zero.
-    Histogram is denser than in #1 since there are more data points (NAs not removed).
+Mean and median go down.  There are more data points with artificially low numbers, dragging the stats down..
+Histogram is denser than in #1 since there are more data points (NAs not removed).
 
 ## Are there differences in activity patterns between weekdays and weekends?
-###add properly formatted date data to FITDATA1
+add properly formatted date data to FITDATA1
 
 ```r
 FITDATA1$date <- as.POSIXlt(FITDATA1$date)
+FITDATA1$dayOfWeek <- weekdays(FITDATA1$date)
+
+#plot time-series based on intervals with means per interval
+par(mfrow = c(2,1), mar = c(4,4,2,1), oma = c(0,0,2,0))
+
+weekEnds <- FITDATA1[weekdays(FITDATA1$date) %in% c("Sunday","Saturday"),]
+myMeansEnds <- tapply(weekEnds$steps, weekEnds$interval, mean, na.rm = TRUE)
+myIntervalsEnds <- names(myMeansEnds)
+
+weekDays <- FITDATA1[!(weekdays(FITDATA1$date) %in% c("Sunday","Saturday")),]
+myMeansDays <- tapply(weekDays$steps, weekDays$interval, mean, na.rm = TRUE)
+myIntervalsDays <- names(myMeansDays)
+
+plot(names(myMeansEnds), myMeansEnds, type = "l", xlab = "Time interval",ylab = "Average Steps", col = "blue")
+title(main = "Average Steps per 5-Minute Interval by Weekend Day" )
+
+plot(names(myMeansDays), myMeansDays, type = "l", xlab = "Time interval",ylab = "Average Steps", col = "red")
+title(main = "Average Steps per 5-Minute Interval by Weekday" )
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)
